@@ -8,6 +8,7 @@ if (!isset($_SESSION['admin_logged'])) {
 }
 
 $active_tab = $_GET['tab'] ?? 'menu';
+
 // 
 // -------------------------------------------------------------
 // 1. EKSPOR LAPORAN PENJUALAN KE CSV
@@ -76,14 +77,14 @@ if (isset($_POST['simpan_menu'])) {
     $deskripsi = $conn->real_escape_string($_POST['deskripsi']);
     $gambar    = $_POST['gambar_lama'] ?? '';
 
-    if (isset($_FILES['gambar']['name']) && $_FILES['gambar']['name'] != '') {
-        $ext      = pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION);
-        $filename = time() . '.' . $ext;
-        $target   = 'images/' . $filename;
-        if (!file_exists('images')) { mkdir('images', 0777, true); }
-        if (move_uploaded_file($_FILES['gambar']['tmp_name'], $target)) {
-            $gambar = $filename;
+    if (isset($_FILES['gambar']['name']) && $_FILES['gambar']['name'] != '' && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
+        $fileTmp = $_FILES['gambar']['tmp_name'];
+        $ext     = strtolower(pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION));
+        $mime    = function_exists('mime_content_type') ? @mime_content_type($fileTmp) : '';
+        if (!$mime) {
+            $mime = 'image/' . ($ext === 'jpg' ? 'jpeg' : $ext);
         }
+        $gambar  = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fileTmp));
     }
 
     if (!empty($_POST['id_menu'])) {

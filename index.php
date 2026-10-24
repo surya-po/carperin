@@ -106,25 +106,29 @@ if (isset($_POST['upload_bukti'])) {
     $order_id = (int)$_POST['order_id'];
     
     if (isset($_FILES['bukti_file']) && $_FILES['bukti_file']['error'] === UPLOAD_ERR_OK) {
-        $fileTmpPath = $_FILES['bukti_file']['tmp_name'];
-        $fileName    = $_FILES['bukti_file']['name'];
+        $fileTmpPath   = $_FILES['bukti_file']['tmp_name'];
+        $fileName      = $_FILES['bukti_file']['name'];
         $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
         
         $allowedExtensions = array('jpg', 'jpeg', 'png', 'webp');
         if (in_array($fileExtension, $allowedExtensions)) {
-            $newFileName = "bukti_" . $order_id . "_" . time() . "." . $fileExtension;
+            // Encode ke base64 agar aman & permanen di Vercel Serverless & Supabase
+            $mimeType = function_exists('mime_content_type') ? @mime_content_type($fileTmpPath) : '';
+            if (!$mimeType) {
+                $mimeType = 'image/' . ($fileExtension === 'jpg' ? 'jpeg' : $fileExtension);
+            }
+            $base64Data = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($fileTmpPath));
+
+            // Jika di localhost dan folder writable, coba simpan juga file fisik
             $uploadFileDir = 'uploads/';
-            
-            if (!is_dir($uploadFileDir)) {
-                mkdir($uploadFileDir, 0755, true);
+            if (is_dir($uploadFileDir) && is_writable($uploadFileDir)) {
+                $newFileName = "bukti_" . $order_id . "_" . time() . "." . $fileExtension;
+                @move_uploaded_file($fileTmpPath, $uploadFileDir . $newFileName);
             }
             
-            $dest_path = $uploadFileDir . $newFileName;
-            if(move_uploaded_file($fileTmpPath, $dest_path)) {
-                $stmt_up = $conn->prepare("UPDATE orders SET bukti_pembayaran = ?, status_pembayaran = 'Sudah Bayar' WHERE id = ?");
-                $stmt_up->bind_param("si", $newFileName, $order_id);
-                $stmt_up->execute();
-            }
+            $stmt_up = $conn->prepare("UPDATE orders SET bukti_pembayaran = ?, status_pembayaran = 'Sudah Bayar' WHERE id = ?");
+            $stmt_up->bind_param("si", $base64Data, $order_id);
+            $stmt_up->execute();
         }
     }
     header("Location: index.php#order-detail-section");
@@ -472,7 +476,7 @@ if (isset($_SESSION['last_order_id'])) {
             <?php if (!empty($active_order['bukti_pembayaran'])): ?>
                 <div style="margin-top: 20px; background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 14px; padding: 16px; text-align: center;">
                     <p style="color: #34d399; font-weight: 700; font-size: 14px; margin-bottom: 10px;">✅ Bukti Pembayaran Berhasil Disimpan:</p>
-                    <img src="uploads/<?php echo $active_order['bukti_pembayaran']; ?>" alt="Bukti Pembayaran" style="max-width: 100%; max-height: 250px; border-radius: 10px; border: 1px solid #10b981;">
+                    <img src="<?php echo get_image_url($active_order['bukti_pembayaran']); ?>" alt="Bukti Pembayaran" style="max-width: 100%; max-height: 250px; border-radius: 10px; border: 1px solid #10b981;">
                 </div>
             <?php endif; ?>
         </div>

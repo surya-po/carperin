@@ -176,14 +176,28 @@ if (!function_exists('get_image_url')) {
         if (empty($gambar)) {
             return 'https://via.placeholder.com/150?text=No+Image';
         }
-        if (file_exists('images/' . $gambar)) {
-            return 'images/' . $gambar;
+        // Jika data URI base64
+        if (strpos($gambar, 'data:image') === 0) {
+            return $gambar;
         }
+        // Jika merupakan URL langsung
+        if (filter_var($gambar, FILTER_VALIDATE_URL)) {
+            return $gambar;
+        }
+        // Jika gambar tersimpan di folder uploads/
         if (file_exists('uploads/' . $gambar)) {
             return 'uploads/' . $gambar;
         }
-        if (filter_var($gambar, FILTER_VALIDATE_URL)) {
-            return $gambar;
+        // Jika gambar tersimpan di folder images/
+        if (file_exists('images/' . $gambar)) {
+            return 'images/' . $gambar;
+        }
+        // Jika di environment Vercel
+        if (file_exists(__DIR__ . '/uploads/' . $gambar)) {
+            return 'uploads/' . $gambar;
+        }
+        if (file_exists(__DIR__ . '/images/' . $gambar)) {
+            return 'images/' . $gambar;
         }
         return 'images/' . $gambar;
     }

@@ -18,10 +18,11 @@ if (isset($_POST['tambah_produk'])) {
     $gambar    = '';
 
     if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
-        $img_name = time() . '_' . preg_replace("/[^a-zA-Z0-9.]/", "_", $_FILES['gambar']['name']);
-        if (move_uploaded_file($_FILES['gambar']['tmp_name'], 'images/' . $img_name)) {
-            $gambar = $img_name;
-        }
+        $fileTmp = $_FILES['gambar']['tmp_name'];
+        $ext     = strtolower(pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION));
+        $mime    = function_exists('mime_content_type') ? @mime_content_type($fileTmp) : '';
+        if (!$mime) { $mime = 'image/' . ($ext === 'jpg' ? 'jpeg' : $ext); }
+        $gambar  = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fileTmp));
     }
 
     $stmt = $conn->prepare("INSERT INTO menu (nama_menu, kategori, harga, gambar, deskripsi) VALUES (?, ?, ?, ?, ?)");
@@ -45,10 +46,11 @@ if (isset($_POST['update_produk'])) {
     $gambar = $row_old['gambar'] ?? '';
 
     if (isset($_FILES['gambar_baru']) && $_FILES['gambar_baru']['error'] === UPLOAD_ERR_OK) {
-        $img_name = time() . '_' . preg_replace("/[^a-zA-Z0-9.]/", "_", $_FILES['gambar_baru']['name']);
-        if (move_uploaded_file($_FILES['gambar_baru']['tmp_name'], 'images/' . $img_name)) {
-            $gambar = $img_name;
-        }
+        $fileTmp = $_FILES['gambar_baru']['tmp_name'];
+        $ext     = strtolower(pathinfo($_FILES['gambar_baru']['name'], PATHINFO_EXTENSION));
+        $mime    = function_exists('mime_content_type') ? @mime_content_type($fileTmp) : '';
+        if (!$mime) { $mime = 'image/' . ($ext === 'jpg' ? 'jpeg' : $ext); }
+        $gambar  = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fileTmp));
     }
 
     $stmt = $conn->prepare("UPDATE menu SET nama_menu=?, kategori=?, harga=?, gambar=?, deskripsi=? WHERE id=?");
