@@ -152,9 +152,9 @@ if (!class_exists('SupabaseConnection')) {
     }
 }
 
-// Konfigurasi Kredensial Supabase
-$host = "db.vdigjznvsyajrycewntv.supabase.co";
-$user = "postgres";
+// Konfigurasi Kredensial Supabase (Connection Pooler IPv4 - Kompatibel dengan Vercel & Local)
+$host = "aws-0-ap-northeast-1.pooler.supabase.com";
+$user = "postgres.vdigjznvsyajrycewntv";
 $pass = "carperin_12.id";
 $db   = "postgres";
 $port = 5432;
